@@ -203,7 +203,15 @@ export default function PricingPage() {
 
           {/* Pricing Cards */}
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-            {plans.map((plan, index) => (
+            {plans
+              .filter((plan) =>
+                // Plans don't have a `billing` field; filter by name instead.
+                plan.name === "Free" ||
+                (billingCycle === "monthly" && plan.name.toLowerCase().includes("monthly")) ||
+                (billingCycle === "quarterly" && plan.name.toLowerCase().includes("3 months")) ||
+                (billingCycle === "biannual" && plan.name.toLowerCase().includes("6 months"))
+              )
+              .map((plan, index) => (
               <motion.div
                 key={plan.name}
                 initial={{ opacity: 0, y: 20 }}
