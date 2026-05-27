@@ -233,12 +233,16 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <p className="mt-6 text-center text-xs text-muted-foreground">
-              By signing in, you agree to our{" "}
-              <Link href="#" className="text-primary hover:underline">Terms of Service</Link>
-              {" and "}
-              <Link href="#" className="text-primary hover:underline">Privacy Policy</Link>
-            </p>
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+  By signing in, you agree to our{" "}
+  <Link href="/terms" className="text-primary hover:underline">
+    Terms of Service
+  </Link>
+  {" and "}
+  <Link href="/privacy" className="text-primary hover:underline">
+    Privacy Policy
+  </Link>
+</p>  
           </motion.div>
         </div>
       </div>

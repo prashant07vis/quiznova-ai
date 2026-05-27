@@ -109,6 +109,7 @@ export default function GeneratePage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedMCQs, setGeneratedMCQs] = useState<MCQ[]>([])
   const [showAnswers, setShowAnswers] = useState<Record<number, boolean>>({})
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({})
   const [difficultyOpen, setDifficultyOpen] = useState(false)
   const [countOpen, setCountOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -138,15 +139,50 @@ export default function GeneratePage() {
     }
   }
 
-  const handleGenerate = async () => {
-    if (!topic && !uploadedFile) return
-    
+   const handleGenerate = async () => {
+  if (!topic && !uploadedFile) return
+
+  try {
     setIsGenerating(true)
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2500))
-    setGeneratedMCQs(sampleMCQs)
+
+    const response = await fetch("/api/generate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        topic,
+        difficulty,
+        questionCount,
+      }),
+    })
+
+    const data = await response.json()
+
+    if (data.success) {
+      const cleanedText = data.data
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+      console.log(cleanedText)
+      
+      const parsedMCQs = JSON.parse(cleanedText)
+
+      setGeneratedMCQs(
+        parsedMCQs.map((mcq: any, index: number) => ({
+          ...mcq,
+          id: index + 1,
+        }))
+      )
+    } else {
+      alert("Failed to generate MCQs")
+    }
+  } catch (error) {
+    console.log(error)
+    alert("Something went wrong")
+  } finally {
     setIsGenerating(false)
   }
+}
 
   const toggleAnswer = (id: number) => {
     setShowAnswers(prev => ({ ...prev, [id]: !prev[id] }))
@@ -490,23 +526,56 @@ export default function GeneratePage() {
                           const showAnswer = showAnswers[mcq.id]
                           
                           return (
-                            <div
-                              key={optIndex}
-                              className={`flex items-center gap-3 p-3 rounded-lg border transition-all duration-200 ${
-                                showAnswer && isCorrect
-                                  ? "border-green-500/50 bg-green-500/10"
-                                  : "border-border bg-background/30 hover:border-primary/30"
-                              }`}
-                            >
-                              {showAnswer && isCorrect ? (
-                                <CircleCheck className="h-5 w-5 text-green-500 flex-shrink-0" />
-                              ) : (
-                                <Circle className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                              )}
-                              <span className={`text-sm ${showAnswer && isCorrect ? "text-green-500 font-medium" : "text-foreground"}`}>
-                                {option}
-                              </span>
-                            </div>
+                            <button
+  key={optIndex}
+  type="button"
+  onClick={() =>
+    setSelectedAnswers(prev => ({
+      ...prev,
+      [mcq.id]: optIndex,
+    }))
+  }
+  className={`flex items-center gap-3 p-3 rounded-lg border transition-all duration-200 w-full text-left ${
+    selectedAnswers[mcq.id] === optIndex
+      ? "border-primary bg-primary/10"
+      : showAnswer && isCorrect
+      ? "border-green-500/50 bg-green-500/10"
+      : "border-border bg-background/30 hover:border-primary/30"
+  }`}
+>
+  <div className="w-5 h-5 rounded-full border flex items-center justify-center">
+    {selectedAnswers[mcq.id] === optIndex && (
+      <div className="w-2 h-2 rounded-full bg-primary" />
+    )}
+  </div>
+
+  <span>{option}</span>
+</button>
+//                             <button
+//                             key={optIndex}
+//                           onClick={() =>
+//                           setSelectedAnswers(prev => ({
+//                            ...prev,
+//                           [mcq.id]: optIndex
+//                             }))
+//                            }
+//                             className={`flex items-center gap-3 p-3 rounded-lg border transition-all duration-200 w-full text-left ${
+//   selectedAnswers[mcq.id] === optIndex
+//     ? "border-primary bg-primary/10"
+//     : showAnswer && isCorrect
+//     ? "border-green-500/50 bg-green-500/10"
+//     : "border-border bg-background/30 hover:border-primary/30"
+// }`}  
+//                             >
+//                               {showAnswer && isCorrect ? (
+//                                 <CircleCheck className="h-5 w-5 text-green-500 flex-shrink-0" />
+//                               ) : (
+//                                 <Circle className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+//                               )}
+//                               <span className={`text-sm ${showAnswer && isCorrect ? "text-green-500 font-medium" : "text-foreground"}`}>
+//                                 {option}
+//                               </span>
+//                             </button>
                           )
                         })}
                       </div>

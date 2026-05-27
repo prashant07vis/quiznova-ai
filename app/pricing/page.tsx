@@ -36,7 +36,7 @@ const plans = [
       { name: "No watermarks", included: false },
     ],
     cta: "Get Started",
-    popular: false,
+    popular: true,
     icon: Zap,
   },
   {
@@ -56,7 +56,7 @@ const plans = [
       { name: "No watermarks", included: true },
     ],
     cta: "Start Free Trial",
-    popular: false,
+    popular: true,
     icon: Star,
   },
   {
@@ -99,7 +99,7 @@ const plans = [
   { name: "Performance tracking", included: true },
 ],
     cta: "Start Free Trial",
-    popular: false,
+    popular: true,
     icon: Shield,
   },
 ]
