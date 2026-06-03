@@ -20,6 +20,25 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
 
+  // ── Role check karke redirect karo ────────────────────────────────────────
+  const redirectByRole = async (uid: string) => {
+    try {
+      const snap = await getDoc(doc(db, "users", uid))
+      if (snap.exists()) {
+        const role = snap.data().role
+        if (role === "teacher") {
+          router.push("/teacher-dashboard")
+        } else {
+          router.push("/dashboard")
+        }
+      } else {
+        router.push("/dashboard")
+      }
+    } catch {
+      router.push("/dashboard")
+    }
+  }
+
   // Google Login
   const handleGoogleLogin = async () => {
     setError("")
@@ -29,18 +48,19 @@ export default function LoginPage() {
       const result = await signInWithPopup(auth, provider)
       const user = result.user
 
-      // Agar pehli baar Google se aa raha hai toh Firestore mein save karo
       const userDoc = await getDoc(doc(db, "users", user.uid))
       if (!userDoc.exists()) {
         await setDoc(doc(db, "users", user.uid), {
           name: user.displayName || "Student",
           email: user.email || "",
           role: "student",
+          plan: "free",
           createdAt: serverTimestamp(),
         })
+        router.push("/dashboard")
+      } else {
+        await redirectByRole(user.uid)
       }
-
-      router.push("/dashboard")
     } catch (err: any) {
       setError("Google login failed. Please try again.")
     } finally {
@@ -52,11 +72,10 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-
     try {
       setIsLoading(true)
-      await signInWithEmailAndPassword(auth, email, password)
-      router.push("/dashboard")
+      const result = await signInWithEmailAndPassword(auth, email, password)
+      await redirectByRole(result.user.uid)
     } catch (err: any) {
       if (
         err.code === "auth/user-not-found" ||
@@ -74,34 +93,27 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Left Panel - Decorative */}
+      {/* Left Panel */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-primary/20 via-background to-accent/20">
         <div className="absolute inset-0">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/20 rounded-full blur-3xl" />
         </div>
-
         <div className="relative z-10 flex flex-col justify-center px-12">
-          <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-          >
+          <motion.div initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}>
             <Link href="/" className="flex items-center gap-3 mb-8">
               <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center glow">
                 <Sparkles className="h-6 w-6 text-primary-foreground" />
               </div>
               <span className="text-3xl font-bold">QuizNova AI</span>
             </Link>
-
             <h1 className="text-4xl font-bold mb-4">
               Welcome back to the future of
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> learning</span>
             </h1>
             <p className="text-lg text-muted-foreground mb-8">
-              Generate AI-powered quizzes, exams, and assessments in seconds. Join thousands of educators and students.
+              Generate AI-powered quizzes, exams, and assessments in seconds.
             </p>
-
             <div className="space-y-4">
               {[
                 "Generate MCQs from any topic instantly",
@@ -126,9 +138,8 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right Panel - Login Form */}
+      {/* Right Panel */}
       <div className="w-full lg:w-1/2 flex flex-col">
-        {/* Header */}
         <header className="p-4 flex justify-between items-center">
           <Link href="/" className="lg:hidden flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
@@ -137,8 +148,7 @@ export default function LoginPage() {
             <span className="font-bold text-lg">QuizNova AI</span>
           </Link>
           <Button
-            variant="ghost"
-            size="icon"
+            variant="ghost" size="icon"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="rounded-full ml-auto"
           >
@@ -147,31 +157,22 @@ export default function LoginPage() {
           </Button>
         </header>
 
-        {/* Form Container */}
         <div className="flex-1 flex items-center justify-center p-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-md"
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold mb-2">Sign in</h2>
               <p className="text-muted-foreground">
                 {"Don't have an account? "}
-                <Link href="/signup" className="text-primary hover:underline">
-                  Sign up
-                </Link>
+                <Link href="/signup" className="text-primary hover:underline">Sign up</Link>
               </p>
             </div>
 
-            {/* Error Message */}
             {error && (
               <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
                 {error}
               </div>
             )}
 
-            {/* Google Login */}
             <div className="space-y-3 mb-6">
               <Button
                 type="button"
@@ -199,15 +200,13 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Email/Password Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Email</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <input
-                    type="email"
-                    value={email}
+                    type="email" value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email"
                     className="w-full pl-10 pr-4 py-3 rounded-xl border border-border/50 bg-background/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all outline-none"
@@ -260,8 +259,7 @@ export default function LoginPage() {
               </div>
 
               <Button
-                type="submit"
-                disabled={isLoading}
+                type="submit" disabled={isLoading}
                 className="w-full h-12 text-lg bg-primary hover:bg-primary/90 text-primary-foreground glow"
               >
                 {isLoading ? (
@@ -271,23 +269,16 @@ export default function LoginPage() {
                     className="h-5 w-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full"
                   />
                 ) : (
-                  <>
-                    Sign in
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </>
+                  <>Sign in<ArrowRight className="ml-2 h-5 w-5" /></>
                 )}
               </Button>
             </form>
 
             <p className="mt-6 text-center text-xs text-muted-foreground">
               By signing in, you agree to our{" "}
-              <Link href="/terms" className="text-primary hover:underline">
-                Terms of Service
-              </Link>
+              <Link href="/terms" className="text-primary hover:underline">Terms of Service</Link>
               {" and "}
-              <Link href="/privacy" className="text-primary hover:underline">
-                Privacy Policy
-              </Link>
+              <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
             </p>
           </motion.div>
         </div>

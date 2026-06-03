@@ -63,7 +63,11 @@ export default function SignupPage() {
       await saveUserToFirestore(user.uid, name, email, role)
 
       // 4. Dashboard pe redirect karo
-      router.push("/dashboard")
+      if (role === "teacher") {
+  router.push("/teacher-dashboard")
+} else {
+  router.push("/dashboard")
+}
     } catch (err: any) {
       if (err.code === "auth/email-already-in-use") {
         setError("This email is already registered. Please login.")
@@ -94,7 +98,11 @@ export default function SignupPage() {
         role
       )
 
-      router.push("/dashboard")
+      if (role === "teacher") {
+  router.push("/teacher-dashboard")
+} else {
+  router.push("/dashboard")
+}
     } catch (err: any) {
       setError("Google signup failed. Please try again.")
     } finally {
